@@ -38,9 +38,9 @@
               "--callto-indexes-size=10000",
               "--irreversible-indexes-sizes=10000,1000",
               "--create-irreversible-indexes=false",
-              "<blocksIndexesStoragePath>",
-              "<irreversibilityIndexesStoragePath>",
-              "<mergedBlocksStoragePath>",
+              "<blocks_indexes_storage_path>",
+              "<irreversibility_indexes_storage_path>",
+              "<merged_blocks_storage_path>",
               "14300000"
             ],
             "env": [

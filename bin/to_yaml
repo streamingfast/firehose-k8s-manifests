@@ -9,18 +9,39 @@ main() {
   done
   shift $((OPTIND-1))
 
-  if [[ "$1" == "" ]]; then
-    usage_error "The <file> argument is required"
+  if [[ ! $# -eq 2 ]]; then
+    usage_error "The <input_folder> and <output_folder> arguments are required"
   fi
 
-  if [[ ! -f "$1" ]]; then
-    usage_error "The file '$1' argument does not exist"
+  if [[ ! -d "$1" ]]; then
+    usage_error "The <input_folder> '$1' argument does not exist or is not a directory"
   fi
 
+  if [[ "$2" == "" ]]; then
+    usage_error "The <output_folder> argument is required"
+  fi
+
+  if [[ -d "$2" ]]; then
+    rm -rf "$2"
+  fi
+
+  mkdir -p "$2"
+
+  files=`find "$1" -type f -name "*.json"`
+  for file in $files; do
+    to_yaml "${file}" "$2"
+  done
+}
+
+to_yaml() {
   json_file="$1"
-  yaml_file=`printf "$json_file" | sed -e 's/\.json$/.yaml/g'`
+  output_folder="$2"
 
-  exec yq -P "$json_file" > "$yaml_file"
+  yaml_file=`basename $json_file | sed -e s/\.json$/.yaml/g`
+  yaml_output_file="$output_folder/$yaml_file"
+
+  echo "$json_file => $yaml_output_file"
+  yq -P "$json_file" > "$yaml_output_file"
 }
 
 usage_error() {
@@ -34,9 +55,9 @@ usage_error() {
 }
 
 usage() {
-  echo "usage: to_yaml <file>"
+  echo "usage: to_yaml <input_folder> <output_folder>"
   echo ""
-  echo "Converts input file in JSON format to YAML using 'yq'."
+  echo "Converts all JSON files JSON format to YAML using 'yq'."
   echo "On Mac OS, you can install 'yq' with 'brew install yq'."
   echo ""
   echo "Options"

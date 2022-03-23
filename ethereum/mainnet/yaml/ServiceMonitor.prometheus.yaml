@@ -1,1 +1,11 @@
-
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus
+  namespace: eth-mainnet
+spec:
+  endpoints:
+    - port: prometheus
+  selector:
+    matchLabels:
+      monitor: prometheus

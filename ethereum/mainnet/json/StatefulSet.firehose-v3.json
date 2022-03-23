@@ -42,11 +42,11 @@
               "--common-atm-max-recent-entry-bytes=4294967296",
               "--common-atm-max-entry-by-age-bytes=4294967296",
               "--common-blockstream-addr=dns:///relayer-v3:9000",
-              "--common-blockmeta-addr=dns:///blockmeta-v3:9000",
+              "--common-blockmeta-addr=",
               "--common-system-shutdown-signal-delay=30s",
-              "--firehose-blocks-store-urls=<mergedBlocksStoragePath>",
-              "--firehose-block-index-url=<blocksIndexesStoragePath>",
-              "--firehose-irreversible-blocks-index-url=<irreversibilityIndexesStoragePath>",
+              "--firehose-blocks-store-urls=<merged_blocks_storage_path>",
+              "--firehose-block-index-url=<blocks_indexes_storage_path>",
+              "--firehose-irreversible-blocks-index-url=<irreversibility_indexes_storage_path>",
               "--firehose-grpc-listen-addr=:9000*"
             ],
             "env": [

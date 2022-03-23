@@ -1,1 +1,126 @@
-
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: peering-v3
+    version: v3
+  name: peering-v3
+  namespace: eth-mainnet
+spec:
+  podManagementPolicy: Parallel
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: peering-v3
+      version: v3
+  serviceName: peering-v3
+  template:
+    metadata:
+      labels:
+        api: jsonrpc
+        app: peering-v3
+        version: v3
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool-id
+                    operator: In
+                    values:
+                      - hpc
+      containers:
+        - command:
+            - /app/sfeth
+            - start
+            - node
+            - --config-file=
+            - --log-format=stackdriver
+            - --log-to-file=false
+            - --node-path=/app/geth
+            - --common-network-id=1
+            - --node-role=peering
+            - --common-system-shutdown-signal-delay=30s
+            - --node-data-dir=/data
+            - --node-debug-deep-mind=false
+            - --node-manager-api-addr=:8080
+            - --node-readiness-max-latency=600s
+            - --node-log-to-zap=true
+            - --node-enforce-peers=mindreader-v3,peering-v3
+            - --node-arguments=+--cache 8192 --maxpeers 100 --metrics --metrics.port 6061 --metrics.addr 0.0.0.0  --port=30303 --http.port=8545 --firehose-deep-mind --firehose-deep-mind-sync-instrumentation=false --snapshot=false
+          env:
+            - name: INFO
+              value: github.com/streamingfast/.*
+          image: <sfeth_container_image>
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - rm -f /data/geth/nodekey
+          name: peering
+          ports:
+            - containerPort: 8545
+              name: http-geth
+              protocol: TCP
+            - containerPort: 30303
+              name: p2p-geth
+              protocol: TCP
+            - containerPort: 9102
+              name: prometheus
+              protocol: TCP
+            - containerPort: 6061
+              name: prometheus2
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 1
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            successThreshold: 2
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: "4"
+              memory: 24Gi
+            requests:
+              cpu: "4"
+              memory: 18Gi
+          volumeMounts:
+            - mountPath: /data
+              name: datadir
+      serviceAccountName: app-node-backup-writer
+      terminationGracePeriodSeconds: 600
+      tolerations:
+        - effect: NoSchedule
+          key: compute-class
+          operator: Equal
+          value: hpc
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        annotations:
+          resize.topolvm.io/increase: 15%
+          resize.topolvm.io/storage_limit: 2000Gi
+          resize.topolvm.io/threshold: 15%
+        name: datadir
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1610Gi
+        storageClassName: gcpssd-lazy
+        volumeMode: Filesystem
+      status:
+        phase: Pending

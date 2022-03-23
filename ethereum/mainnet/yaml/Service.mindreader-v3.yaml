@@ -1,1 +1,36 @@
-
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mindreader-v3
+    monitor: prometheus
+    monitor2: prometheus2
+  name: mindreader-v3
+  namespace: eth-mainnet
+spec:
+  clusterIP: None
+  ports:
+    - name: grpc-endpoint
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    - name: p2p-endpoint
+      port: 30303
+      protocol: TCP
+      targetPort: 30303
+    - name: prometheus
+      port: 9102
+      protocol: TCP
+      targetPort: 9102
+    - name: prometheus2
+      port: 6061
+      protocol: TCP
+      targetPort: 6061
+    - name: rpc-endpoint
+      port: 8545
+      protocol: TCP
+      targetPort: 8545
+  publishNotReadyAddresses: true
+  selector:
+    app: mindreader-v3
+  type: ClusterIP

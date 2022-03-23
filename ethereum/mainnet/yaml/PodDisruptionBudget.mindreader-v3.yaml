@@ -1,1 +1,12 @@
-
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: mindreader-v3
+  name: mindreader-v3
+  namespace: eth-mainnet
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: mindreader-v3

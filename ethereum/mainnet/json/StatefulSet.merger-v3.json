@@ -40,8 +40,8 @@
               "--log-to-file=false",
               "--merger-time-between-store-lookups=5s",
               "--merger-grpc-listen-addr=:9000",
-              "--common-blocks-store-url=<mergedBlocksStoragePath>",
-              "--common-oneblock-store-url=<oneBlocksStoragePath>",
+              "--common-blocks-store-url=<merged_blocks_storage_path>",
+              "--common-oneblock-store-url=<one_blocks_storage_path>",
               "--merger-writers-leeway=20s",
               "--merger-state-file=/data/merger.seen.gob"
             ],

@@ -52,7 +52,7 @@ spec:
             - --relayer-merger-addr=dns:///merger-v3:9000
             - --relayer-grpc-listen-addr=:9000
             - --relayer-source=dns:///mindreader-v3-0.mindreader-v3:9000,dns:///mindreader-v3-1.mindreader-v3:9000
-            - --common-blocks-store-url=<mergedBlocksStoragePath>
+            - --common-blocks-store-url=<merged_blocks_storage_path>
           env:
             - name: INFO
               value: github.com/streamingfast/.*

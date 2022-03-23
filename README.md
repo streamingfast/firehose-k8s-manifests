@@ -21,19 +21,19 @@ Change the `namespace` value with a search/replace if you want to use something 
 ### Replacements
 
 - `<sfeth_container_image>` Should be the Docker image you will use to run `sfeth` binary (the Docker image should contain `sfeth` as well as the Geth instrumented binary for the chain).
-- `<oneBlocksStoragePath>` Should points to a location where single block are saved for further processing by the merger (which cleans them after creating a bundle).
-- `<mergedBlocksStoragePath>` Should points to location where merged bundles of 100 blocks will be stored permanently.
-- `<blocksIndexesStoragePath>` Should points to a location where blocks indexes are populated and stored permanently.
-- `<irreversibilityIndexesStoragePath>` hould points to a location where irreversibility indexes (to determine if a block is final or not rapidly) are populated and stored permanently.
+- `<one_blocks_storage_path>` Should points to a location where single block are saved for further processing by the merger (which cleans them after creating a bundle).
+- `<merged_blocks_storage_path>` Should points to location where merged bundles of 100 blocks will be stored permanently.
+- `<blocks_indexes_storage_path>` Should points to a location where blocks indexes are populated and stored permanently.
+- `<irreversibility_indexes_storage_path>` hould points to a location where irreversibility indexes (to determine if a block is final or not rapidly) are populated and stored permanently.
 
 For the storage paths, how you gonna split depends a bit on what you are going to do deploy. When using a cloud provider directly,
 we suggest using a single bucket and in each bucket, element are namespaced using the deployed namespace then a folder, so for
 `eth-mainnet` namespace, storage paths could look like:
 
-- `<oneBlocksStoragePath>` => `gs://acme-blocks-us/eth-mainnet/one-blocks`
-- `<mergedBlocksStoragePath>` => `gs://acme-blocks-us/eth-mainnet/merged-blocks`
-- `<blocksIndexesStoragePath>` => `gs://acme-blocks-us/eth-mainnet/indexes/fitlers`
-- `<irreversibilityIndexesStoragePath>` => `gs://acme-blocks-us/eth-mainnet/indexes/irr`
+- `<one_blocks_storage_path>` => `gs://acme-blocks-us/eth-mainnet/one-blocks`
+- `<merged_blocks_storage_path>` => `gs://acme-blocks-us/eth-mainnet/merged-blocks`
+- `<blocks_indexes_storage_path>` => `gs://acme-blocks-us/eth-mainnet/indexes/fitlers`
+- `<irreversibility_indexes_storage_path>` => `gs://acme-blocks-us/eth-mainnet/indexes/irr`
 
 Replacement can be made against any DSN accepted by our storage abstraction library
 https://github.com/streamingfast/dstore.
@@ -60,7 +60,5 @@ Tanka and provide publicly while still using it in our production set up to be s
 To convert a bunch of `json` file to YAML, install `yq` and then:
 
 ```
-find ethereum/mainnet/json -type f | xargs -n1 ./bin/to_yaml
-mkdir ethereum/mainnet/yaml
-mv ethereum/mainnet/json/*.yaml ethereum/mainnet/yaml
+to_yaml ethereum/mainnet/json ethereum/mainnet/yaml
 ```

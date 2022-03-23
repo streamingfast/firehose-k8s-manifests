@@ -51,3 +51,16 @@ solution. We use `ServiceAccount` and GKE mapping to manages permissions of our 
 We version most of the resources you will see relate to a particular network. The actual current version is not really important
 and could all be renamed to `v1`. We versionned them like so we are able to later deploy a brand new set in the same namespace
 without collision.
+
+### Conversion to YAML
+
+Our sources Kubernetes manifest are all produced thanks to an internal Jsonnet setup that we aim to convert to
+Tanka and provide publicly while still using it in our production set up to be sure they are working as expected.
+
+To convert a bunch of `json` file to YAML, install `yq` and then:
+
+```
+find ethereum/mainnet/json -type f | xargs -n1 ./bin/to_yaml
+mkdir ethereum/mainnet/yaml
+mv ethereum/mainnet/json/*.yaml ethereum/mainnet/yaml
+```

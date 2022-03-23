@@ -1,0 +1,15 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  labels:
+    app: firehose
+  name: firehose-backendconfig
+  namespace: eth-mainnet
+spec:
+  healthCheck:
+    checkIntervalSec: 10
+    port: 9000
+    requestPath: /healthz
+    timeoutSec: 3
+    type: HTTPS
+  timeoutSec: 86400

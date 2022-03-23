@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: block-indexer-callto-v3
+    version: v3
+  name: block-indexer-callto-v3
+  namespace: eth-mainnet
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: block-indexer-callto-v3
+      version: v3
+  serviceName: block-indexer-callto-v3
+  template:
+    metadata:
+      labels:
+        app: block-indexer-callto-v3
+        version: v3
+      name: block-indexer-callto-v3
+    spec:
+      containers:
+        - command:
+            - /app/sfeth
+            - tools
+            - generate-callto-index
+            - --callto-indexes-size=10000
+            - --irreversible-indexes-sizes=10000,1000
+            - --create-irreversible-indexes=false
+            - <blocksIndexesStoragePath>
+            - <irreversibilityIndexesStoragePath>
+            - <mergedBlocksStoragePath>
+            - "14300000"
+          env:
+            - name: INFO
+              value: github.com/streamingfast/.*
+          image: <sfeth_container_image>
+          imagePullPolicy: IfNotPresent
+          name: indexer
+          ports:
+            - containerPort: 9102
+              name: prometheus
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 300m
+              memory: 2Gi
+      serviceAccountName: app-blocks-writer
+  updateStrategy:
+    type: RollingUpdate

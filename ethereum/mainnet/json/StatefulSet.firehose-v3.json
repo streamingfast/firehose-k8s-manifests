@@ -1,0 +1,134 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "labels": {
+      "app": "firehose-v3",
+      "version": "v3"
+    },
+    "name": "firehose-v3",
+    "namespace": "eth-mainnet"
+  },
+  "spec": {
+    "podManagementPolicy": "Parallel",
+    "replicas": 2,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "app": "firehose-v3",
+        "version": "v3"
+      }
+    },
+    "serviceName": "firehose",
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "firehose-v3",
+          "version": "v3"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "command": [
+              "/app/sfeth",
+              "start",
+              "firehose",
+              "--config-file=",
+              "--log-format=stackdriver",
+              "--log-to-file=false",
+              "--common-atm-cache-enabled",
+              "--common-atm-cache-dir=/data",
+              "--common-atm-max-recent-entry-bytes=4294967296",
+              "--common-atm-max-entry-by-age-bytes=4294967296",
+              "--common-blockstream-addr=dns:///relayer-v3:9000",
+              "--common-blockmeta-addr=dns:///blockmeta-v3:9000",
+              "--common-system-shutdown-signal-delay=30s",
+              "--firehose-blocks-store-urls=<mergedBlocksStoragePath>",
+              "--firehose-block-index-url=<blocksIndexesStoragePath>",
+              "--firehose-irreversible-blocks-index-url=<irreversibilityIndexesStoragePath>",
+              "--firehose-grpc-listen-addr=:9000*"
+            ],
+            "env": [
+              {
+                "name": "INFO",
+                "value": ".*"
+              }
+            ],
+            "image": "<sfeth_container_image>",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "firehose",
+            "ports": [
+              {
+                "containerPort": 9000,
+                "name": "grpc",
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 9102,
+                "name": "prometheus",
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "failureThreshold": 3,
+              "httpGet": {
+                "path": "/healthz",
+                "port": 9000,
+                "scheme": "HTTPS"
+              },
+              "initialDelaySeconds": 5,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 1
+            },
+            "resources": {
+              "limits": {
+                "cpu": "4",
+                "memory": "16Gi"
+              },
+              "requests": {
+                "cpu": "2",
+                "memory": "8Gi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/data",
+                "name": "datadir"
+              }
+            ]
+          }
+        ],
+        "terminationGracePeriodSeconds": 600
+      }
+    },
+    "updateStrategy": {
+      "type": "RollingUpdate"
+    },
+    "volumeClaimTemplates": [
+      {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "metadata": {
+          "name": "datadir"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "16Gi"
+            }
+          },
+          "storageClassName": "gcpssd-lazy",
+          "volumeMode": "Filesystem"
+        },
+        "status": {
+          "phase": "Pending"
+        }
+      }
+    ]
+  }
+}

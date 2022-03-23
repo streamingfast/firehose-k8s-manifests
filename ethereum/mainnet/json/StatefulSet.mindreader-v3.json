@@ -1,0 +1,199 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "labels": {
+      "app": "mindreader-v3"
+    },
+    "name": "mindreader-v3",
+    "namespace": "eth-mainnet"
+  },
+  "spec": {
+    "podManagementPolicy": "Parallel",
+    "replicas": 2,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "api": "jsonrpc",
+        "app": "mindreader-v3"
+      }
+    },
+    "serviceName": "mindreader-v3",
+    "template": {
+      "metadata": {
+        "labels": {
+          "api": "jsonrpc",
+          "app": "mindreader-v3"
+        }
+      },
+      "spec": {
+        "affinity": {
+          "nodeAffinity": {
+            "requiredDuringSchedulingIgnoredDuringExecution": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "pool-id",
+                      "operator": "In",
+                      "values": [
+                        "hpc"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "containers": [
+          {
+            "command": [
+              "/app/sfeth",
+              "start",
+              "mindreader-node",
+              "--config-file=",
+              "--log-format=stackdriver",
+              "--log-to-file=false",
+              "--common-network-id=1",
+              "--common-oneblock-store-url=<oneBlocksStoragePath>",
+              "--common-blocks-store-url=<mergedBlocksStoragePath>",
+              "--mindreader-node-data-dir=/data",
+              "--mindreader-node-readiness-max-latency=2700s",
+              "--mindreader-node-log-to-zap=false",
+              "--mindreader-node-debug-deep-mind=false",
+              "--mindreader-node-blocks-chan-capacity=1000",
+              "--mindreader-node-merge-and-store-directly=false",
+              "--mindreader-node-discard-after-stop-num=false",
+              "--mindreader-node-grpc-listen-addr=:9000",
+              "--mindreader-node-manager-api-addr=:8080",
+              "--mindreader-node-enforce-peers=mindreader-v3,peering-v3",
+              "--mindreader-node-merge-threshold-block-age=3h",
+              "--mindreader-node-arguments=+--cache 8192 --maxpeers 100 --metrics --metrics.port 6061 --metrics.addr 0.0.0.0  --port=30303 --http.port=8545 --snapshot=false --txlookuplimit=1000",
+              "--mindreader-node-bootstrap-data-url=",
+              "--mindreader-node-path=/app/geth",
+              "--mindreader-node-type=geth"
+            ],
+            "env": [
+              {
+                "name": "INFO",
+                "value": "github.com/streamingfast/.*"
+              }
+            ],
+            "image": "<sfeth_container_image>",
+            "imagePullPolicy": "IfNotPresent",
+            "lifecycle": {
+              "postStart": {
+                "exec": {
+                  "command": [
+                    "/bin/sh",
+                    "-c",
+                    "rm -f /data/geth/nodekey"
+                  ]
+                }
+              }
+            },
+            "name": "mindreader",
+            "ports": [
+              {
+                "containerPort": 9000,
+                "name": "grpc-endpoint",
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 30303,
+                "name": "p2p-endpoint",
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 9102,
+                "name": "prometheus",
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 6061,
+                "name": "prometheus2",
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 8545,
+                "name": "rpc-endpoint",
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "failureThreshold": 1,
+              "httpGet": {
+                "path": "/healthz",
+                "port": 8080,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 10,
+              "periodSeconds": 5,
+              "successThreshold": 1,
+              "timeoutSeconds": 1
+            },
+            "resources": {
+              "limits": {
+                "cpu": "4",
+                "memory": "24Gi"
+              },
+              "requests": {
+                "cpu": "2",
+                "memory": "18Gi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/data",
+                "name": "datadir"
+              }
+            ]
+          }
+        ],
+        "serviceAccountName": "app-blocks-writer",
+        "terminationGracePeriodSeconds": 600,
+        "tolerations": [
+          {
+            "effect": "NoSchedule",
+            "key": "compute-class",
+            "operator": "Equal",
+            "value": "hpc"
+          }
+        ]
+      }
+    },
+    "updateStrategy": {
+      "type": "RollingUpdate"
+    },
+    "volumeClaimTemplates": [
+      {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "metadata": {
+          "annotations": {
+            "resize.topolvm.io/increase": "15%",
+            "resize.topolvm.io/storage_limit": "3000Gi",
+            "resize.topolvm.io/threshold": "15%"
+          },
+          "name": "datadir"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "2250Gi"
+            }
+          },
+          "storageClassName": "gcpssd-lazy",
+          "volumeMode": "Filesystem"
+        },
+        "status": {
+          "phase": "Pending"
+        }
+      }
+    ]
+  }
+}

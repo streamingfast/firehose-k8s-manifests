@@ -1,0 +1,118 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "labels": {
+      "app": "merger-v3",
+      "version": "v3"
+    },
+    "name": "merger-v3",
+    "namespace": "eth-mainnet"
+  },
+  "spec": {
+    "podManagementPolicy": "OrderedReady",
+    "replicas": 1,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "app": "merger-v3",
+        "version": "v3"
+      }
+    },
+    "serviceName": "merger-v3",
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "merger-v3",
+          "version": "v3"
+        },
+        "name": "merger-v3"
+      },
+      "spec": {
+        "containers": [
+          {
+            "command": [
+              "/app/sfeth",
+              "start",
+              "merger",
+              "--config-file=",
+              "--log-format=stackdriver",
+              "--log-to-file=false",
+              "--merger-time-between-store-lookups=5s",
+              "--merger-grpc-listen-addr=:9000",
+              "--common-blocks-store-url=<mergedBlocksStoragePath>",
+              "--common-oneblock-store-url=<oneBlocksStoragePath>",
+              "--merger-writers-leeway=20s",
+              "--merger-state-file=/data/merger.seen.gob"
+            ],
+            "env": [
+              {
+                "name": "INFO",
+                "value": "github.com/streamingfast/.*"
+              }
+            ],
+            "image": "<sfeth_container_image>",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "merger",
+            "ports": [
+              {
+                "containerPort": 9102,
+                "name": "prometheus",
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "2",
+                "memory": "2Gi"
+              },
+              "requests": {
+                "cpu": "200m",
+                "memory": "500Mi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/data",
+                "name": "datadir"
+              }
+            ]
+          }
+        ],
+        "serviceAccountName": "app-blocks-writer"
+      }
+    },
+    "updateStrategy": {
+      "type": "RollingUpdate"
+    },
+    "volumeClaimTemplates": [
+      {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "metadata": {
+          "annotations": {
+            "resize.topolvm.io/increase": "15%",
+            "resize.topolvm.io/storage_limit": "4Gi",
+            "resize.topolvm.io/threshold": "15%"
+          },
+          "name": "datadir"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "4Gi"
+            }
+          },
+          "storageClassName": "gcpssd-lazy",
+          "volumeMode": "Filesystem"
+        },
+        "status": {
+          "phase": "Pending"
+        }
+      }
+    ]
+  }
+}

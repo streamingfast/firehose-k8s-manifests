@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+main() {
+  while getopts "h" opt; do
+    case $opt in
+      h) usage && exit 0;;
+      \?) usage_error "Invalid option: -$OPTARG";;
+    esac
+  done
+  shift $((OPTIND-1))
+
+  if [[ "$1" == "" ]]; then
+    usage_error "The <file> argument is required"
+  fi
+
+  if [[ ! -f "$1" ]]; then
+    usage_error "The file '$1' argument does not exist"
+  fi
+
+  json_file="$1"
+  yaml_file=`printf "$json_file" | sed -e 's/\.json$/.yaml/g'`
+
+  exec yq -P "$json_file" > "$yaml_file"
+}
+
+usage_error() {
+  message="$1"
+  exit_code="$2"
+
+  echo "ERROR: $message"
+  echo ""
+  usage
+  exit ${exit_code:-1}
+}
+
+usage() {
+  echo "usage: to_yaml <file>"
+  echo ""
+  echo "Converts input file in JSON format to YAML using 'yq'."
+  echo "On Mac OS, you can install 'yq' with 'brew install yq'."
+  echo ""
+  echo "Options"
+  echo "    -h          Display help about this script"
+}
+
+main "$@"

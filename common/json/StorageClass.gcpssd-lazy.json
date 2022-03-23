@@ -1,0 +1,14 @@
+{
+  "apiVersion": "storage.k8s.io/v1",
+  "kind": "StorageClass",
+  "metadata": {
+    "name": "gcpssd-lazy",
+  },
+  "parameters": {
+    "type": "pd-ssd"
+  },
+  "allowVolumeExpansion": true,
+  "provisioner": "kubernetes.io/gce-pd",
+  "reclaimPolicy": "Delete",
+  "volumeBindingMode": "WaitForFirstConsumer"
+}

@@ -1,0 +1,21 @@
+{
+  "apiVersion": "monitoring.coreos.com/v1",
+  "kind": "ServiceMonitor",
+  "metadata": {
+    "name": "prometheus2",
+    "namespace": "eth-mainnet"
+  },
+  "spec": {
+    "endpoints": [
+      {
+        "path": "/debug/metrics/prometheus",
+        "port": "prometheus2"
+      }
+    ],
+    "selector": {
+      "matchLabels": {
+        "monitor2": "prometheus2"
+      }
+    }
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "labels": {
+      "app": "relayer-v3",
+      "version": "v3"
+    },
+    "name": "relayer-v3",
+    "namespace": "eth-mainnet"
+  },
+  "spec": {
+    "minReadySeconds": 60,
+    "progressDeadlineSeconds": 600,
+    "replicas": 2,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "app": "relayer-v3",
+        "version": "v3"
+      }
+    },
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "relayer-v3",
+          "version": "v3"
+        },
+        "name": "relayer-v3"
+      },
+      "spec": {
+        "affinity": {
+          "podAntiAffinity": {
+            "preferredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "podAffinityTerm": {
+                  "labelSelector": {
+                    "matchExpressions": [
+                      {
+                        "key": "app",
+                        "operator": "In",
+                        "values": [
+                          "relayer-v3"
+                        ]
+                      }
+                    ]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                },
+                "weight": 10
+              }
+            ]
+          }
+        },
+        "containers": [
+          {
+            "command": [
+              "/app/sfeth",
+              "start",
+              "relayer",
+              "--config-file=",
+              "--log-format=stackdriver",
+              "--log-to-file=false",
+              "--relayer-buffer-size=300",
+              "--relayer-max-source-latency=5m",
+              "--relayer-merger-addr=dns:///merger-v3:9000",
+              "--relayer-grpc-listen-addr=:9000",
+              "--relayer-source=dns:///mindreader-v3-0.mindreader-v3:9000,dns:///mindreader-v3-1.mindreader-v3:9000",
+              "--common-blocks-store-url=<mergedBlocksStoragePath>"
+            ],
+            "env": [
+              {
+                "name": "INFO",
+                "value": "github.com/streamingfast/.*"
+              },
+              {
+                "name": "TRACE_RELAYER_SOURCE",
+                "value": "true"
+              }
+            ],
+            "image": "<sfeth_container_image>",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "relayer",
+            "ports": [
+              {
+                "containerPort": 9102,
+                "name": "prometheus",
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 9000,
+                "name": "publisher",
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "/app/grpc_health_probe",
+                  "-addr=:9000"
+                ]
+              },
+              "failureThreshold": 3,
+              "initialDelaySeconds": 5,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 1
+            },
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1500Mi"
+              },
+              "requests": {
+                "cpu": "200m",
+                "memory": "200Mi"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

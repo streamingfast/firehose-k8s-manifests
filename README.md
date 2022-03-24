@@ -1,63 +1,58 @@
 ## Firehose Kubernetes Manifests
 
-Those here are a edited Kubernetes manifest used by StreamingFast on its production cluster serving Ethereum Mainnet,
-Ethereum Ropsten, BSC Mainnet, Polygon Mainnet, NEAR Mainnet and NEAR Testnet.
+The manifests in this repository are trimmed down and edited versions of the Kubernetes manifests used by StreamingFast on its production clusters serving Ethereum Mainnet,
+Ethereum Ropsten, BSC Mainnet, Polygon Mainnet, NEAR Mainnet, and NEAR Testnet. Some elements have been replaced with placeholder strings, so they need to be changed
+by you. The elements to change are listed below.
 
-It's a trimmed down edited version of our files. Some elements have been replaced so they need to be changed
-be you. The elements to change are listed below
-
-**Important** The manifest you will find it are provided as a reference to create your own version of it. Indeed,
-they will probably not apply directly (although it should be quite easy to make them work mostly directly). Indeed,
-some elements specifically `PersistentVolumeClaim` have some dependencies on the cluster to be configured correctly,
-for example `common/yaml/StorageClass.gcpssd-lazy.yaml`.
+**Important note**: The manifests here are provided as a reference guide for you to create your own manifests. The manifests in this repository probably cannot and should not be applied 
+directly without changing them. Some elements - specifically `PersistentVolumeClaim` - have some dependencies on the cluster which need to be configured correctly (eg: `common/yaml/StorageClass.gcpssd-lazy.yaml` )
 
 ### Namespaces
 
-Each chain specific set (e.g. [ethereum/mainnet](./ethereum/mainnet)) has an hard-coded namespace that follows the
-pattern `<protocol>-<network>` where usually the protocol is a shorthen version of the full one.
+Each chain specific set (e.g. [ethereum/mainnet](./ethereum/mainnet)) has a hard-coded namespace which follows the
+pattern `<protocol>-<network>` where the protocol is typically a shortened version of the full one (eg: eth-mainnet).
 
 Change the `namespace` value with a search/replace if you want to use something else.
 
 ### Replacements
 
 - `<sfeth_container_image>` Should be the Docker image you will use to run `sfeth` binary (the Docker image should contain `sfeth` as well as the Geth instrumented binary for the chain).
-- `<one_blocks_storage_path>` Should points to a location where single block are saved for further processing by the merger (which cleans them after creating a bundle).
-- `<merged_blocks_storage_path>` Should points to location where merged bundles of 100 blocks will be stored permanently.
-- `<blocks_indexes_storage_path>` Should points to a location where blocks indexes are populated and stored permanently.
-- `<irreversibility_indexes_storage_path>` hould points to a location where irreversibility indexes (to determine if a block is final or not rapidly) are populated and stored permanently.
+- `<one_blocks_storage_path>` Should point to a location where single blocks are saved for further processing by the merger (which cleans them after creating a bundle).
+- `<merged_blocks_storage_path>` Should point to location where merged bundles of 100 blocks will be stored permanently.
+- `<blocks_indexes_storage_path>` Should point to a location where blocks indexes are populated and stored permanently.
+- `<irreversibility_indexes_storage_path>` Should point to a location where irreversibility indexes (to determine if a block is final or not rapidly) are populated and stored permanently.
 
-For the storage paths, how you gonna split depends a bit on what you are going to do deploy. When using a cloud provider directly,
-we suggest using a single bucket and in each bucket, element are namespaced using the deployed namespace then a folder, so for
-`eth-mainnet` namespace, storage paths could look like:
+For the storage paths, how you split depends on what you are going to do deploy. When using a cloud provider directly,
+We suggest using a single bucket and in each bucket, elements are namespaced using the deployed namespace, and then the target folder name. 
+
+For `eth-mainnet` namespace, storage paths could look like:
 
 - `<one_blocks_storage_path>` => `gs://acme-blocks-us/eth-mainnet/one-blocks`
 - `<merged_blocks_storage_path>` => `gs://acme-blocks-us/eth-mainnet/merged-blocks`
 - `<blocks_indexes_storage_path>` => `gs://acme-blocks-us/eth-mainnet/indexes/fitlers`
 - `<irreversibility_indexes_storage_path>` => `gs://acme-blocks-us/eth-mainnet/indexes/irr`
 
-Replacement can be made against any DSN accepted by our storage abstraction library
-https://github.com/streamingfast/dstore.
+Replacement can be made against any DSN accepted by our storage abstraction library https://github.com/streamingfast/dstore.
 
-- AWS S3 - `s3://[bucket]/path?region=us-east-1` or `s3://<ip>:<port>/<bucket>?region=none&insecure=true` (any compatible storage solution with S3 interface works)
+- AWS S3 - `s3://[bucket]/path?region=us-east-1` or `s3://<ip>:<port>/<bucket>?region=none&insecure=true` (any storage solution compatible with the S3 interface works)
 - Google Storage `gs://[bucket]/path`
 - Azure Blob Storage `az://[account].[container]/path`
 - Local file systems `file:///` prefix (including virtual of fused-based)
 
-Authentication must be configured per pod to access the storage location, this is is highly dependant on the picked
-solution. We use `ServiceAccount` and GKE mapping to manages permissions of our individual pods.
+Authentication must be configured per pod to access the storage location, this is highly dependent on the chosen
+solution. We use `ServiceAccount` and GKE mappings to manage permissions of our individual pods.
 
 ### Versions
 
-We version most of the resources you will see relate to a particular network. The actual current version is not really important
-and could all be renamed to `v1`. We versionned them like so we are able to later deploy a brand new set in the same namespace
-without collision.
+We version the resources related to a particular network by adding a version folder to the storage path (eg: `gs://acme-blocks-us/eth-mainnet/one-blocks/v1`). This is optional,
+but highly recommended. We version our resources this way in order to be able to later deploy a different version in the same namespace without collision.
 
 ### Conversion to YAML
 
-Our sources Kubernetes manifest are all produced thanks to an internal Jsonnet setup that we aim to convert to
+Internally, our Kubernetes manifests are generated by a Jsonnet setup which we aim to convert to
 Tanka and provide publicly while still using it in our production set up to be sure they are working as expected.
 
-To convert a bunch of `json` file to YAML, install `yq` and then:
+To convert `json` files to YAML, install `yq` and then run:
 
 ```
 to_yaml ethereum/mainnet/json ethereum/mainnet/yaml
